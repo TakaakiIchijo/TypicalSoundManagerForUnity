@@ -18,6 +18,8 @@ public class TSMSample : MonoBehaviour {
     public Button pause;
 
     public SoundManager sm;
+    public SimpleRotater cube;
+    public Slider masterVolumeSlider;
 
 	void Start () {
         playBGM1.onClick.AddListener(() => {
@@ -57,7 +59,19 @@ public class TSMSample : MonoBehaviour {
         });
 
         pause.onClick.AddListener(() => {
-            if (!sm.IsPaused) { sm.OnPause(); } else { sm.OnResume(); }
+            if (!sm.IsPaused) {
+                sm.OnPause();
+                cube.OnPause();
+                pause.GetComponentInChildren<Text>().text = "Resume";
+            } else {
+                sm.OnResume();
+                cube.OnResume();
+                pause.GetComponentInChildren<Text>().text = "Pause";
+            }
+        });
+
+        masterVolumeSlider.onValueChanged.AddListener((value) => {
+            sm.MasterVolumeInt = (int)value;
         });
     }
 

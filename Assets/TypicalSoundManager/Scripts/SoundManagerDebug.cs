@@ -16,17 +16,17 @@ namespace TSM
         {
             GUI.Label(new Rect(0, 0, 600, 30), "SoundManager Monitor");
 
-            for (int i = 0; i < sm.BgmAudioSourceList.Count; i++)
+            for (int i = 0; i < sm.BgmAudioSourceExList.Count; i++)
             {
-                if (sm.BgmAudioSourceList[i] != null)
+                if (sm.BgmAudioSourceExList[i] != null)
                 {
-                    string setBGMName = sm.BgmAudioSourceList[i].clip == null ? "" : sm.BgmAudioSourceList[i].clip.name;
+                    string setBGMName = sm.BgmAudioSourceExList[i].audioSource.clip == null ? "" : sm.BgmAudioSourceExList[i].audioSource.clip.name;
                     GUI.Label(new Rect(0, 10 * (i + 1), 600, 30), "BGMSource " + i + " " +
                         setBGMName
                         + " :isPlaying " +
-                        sm.BgmAudioSourceList[i].isPlaying
+                        sm.BgmAudioSourceExList[i].audioSource.isPlaying
                         + " :volume " +
-                        sm.BgmAudioSourceList[i].volume);
+                        sm.BgmAudioSourceExList[i].audioSource.volume);
                 }
             }
 

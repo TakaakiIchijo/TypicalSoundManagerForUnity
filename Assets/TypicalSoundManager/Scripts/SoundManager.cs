@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -23,10 +24,10 @@ namespace TSM
 
         private AudioSource jingleAudioSource = new AudioSource();
         private List<AudioSource> seAudioSourceList = new List<AudioSource>();
-        private List<AudioSource> bgmAudioSourceList = new List<AudioSource>();
+        private List<AudioSourceExtentions> bgmAudioSourceExList = new List<AudioSourceExtentions>();
 
-        public List<AudioSource> BgmAudioSourceList
-        { get { return bgmAudioSourceList; } }
+        public List<AudioSourceExtentions> BgmAudioSourceExList
+        { get { return bgmAudioSourceExList; } }
 
         public AudioSource JingleAudioSource
         { get { return jingleAudioSource; } }
@@ -49,8 +50,6 @@ namespace TSM
         private Action jingleCallback;
 
         public string LastPlayedSEName { get; private set; }
-
-        public Coroutine currentFadeInCoroutine;
 
         private void Awake()
         {
@@ -76,8 +75,16 @@ namespace TSM
             bgmAudioClips = TSMUtil.LoadAudioClipsFromResourcesFolder(bgmAudioClipPath);
             jingleAudioClips = TSMUtil.LoadAudioClipsFromResourcesFolder(jingledAudioClipPath);
 
-            //オーディオソースの生成//
-            bgmAudioSourceList = TSMUtil.InstantiateAudioSourceList(2, true, this.gameObject, mixerBGM);
+            //オーディオソースの生成/
+
+            for (int i = 0; i < 2; i++)
+            {
+                AudioSource _audioSource = TSMUtil.InstantiateAudioSource(true, gameObject, mixerBGM);
+                AudioSourceExtentions ase = gameObject.AddComponent<AudioSourceExtentions>() as AudioSourceExtentions;
+                ase.audioSource = _audioSource;
+                bgmAudioSourceExList.Add(ase);
+            }
+
             seAudioSourceList = TSMUtil.InstantiateAudioSourceList(seMaxNum, false, this.gameObject, mixerSE);
             jingleAudioSource = TSMUtil.InstantiateAudioSource(false, this.gameObject, mixerJINGLE);
         }
@@ -125,9 +132,7 @@ namespace TSM
         public void OnBGMPause()
         {
             jingleAudioSource.Pause();
-            bgmAudioSourceList.ForEach(audioSource => audioSource.Pause());
-            //StopCoroutine(currentFadeInCoroutine);
-            //フェードアウトしてからポーズ//
+            bgmAudioSourceExList.ForEach(ase => ase.Pause());
         }
 
         public void OnResume()
@@ -141,8 +146,7 @@ namespace TSM
         public void OnBGMResume()
         {
             jingleAudioSource.UnPause();
-            bgmAudioSourceList.ForEach(audioSource => audioSource.UnPause());
-            //StartCoroutine(currentFadeInCoroutine);
+            bgmAudioSourceExList.ForEach(ase => ase.UnPause());
         }
 
         public void PlayBGM(string clipName)
@@ -154,54 +158,32 @@ namespace TSM
         {
             AudioClip clip = TSMUtil.GetAudioClipFromLoadedList(clipName, bgmAudioClips);
 
-            if (bgmAudioSourceList.Find(source => source.clip == clip))
+            if (bgmAudioSourceExList.Find(ase => ase.audioSource.clip == clip))
             {
                 return;
             }
 
-            AudioSource audioSouce = bgmAudioSourceList.FirstOrDefault(source => !source.isPlaying);
-            if (audioSouce != null)
-
+            AudioSourceExtentions audioSourceEx = bgmAudioSourceExList.FirstOrDefault(ase => ase.audioSource.isPlaying == false);
+            if (audioSourceEx != null)
             {
                 if (fadeTime == 0f) fadeTime = DEFAULT_FADETIME;
 
                 StopBGMWithFade(fadeTime);
-                audioSouce.clip = clip;
-
-                callback += () => { currentFadeInCoroutine = null; };
-                currentFadeInCoroutine = StartCoroutine(audioSouce.FadeIn(fadeTime, callback));
+                audioSourceEx.PlayWithFadeIn(clip, fadeTime, callback);
             }
         }
 
         public void StopBGM()
         {
-            StopBGMWithFade(0.1f);
+            bgmAudioSourceExList.ForEach(ase => ase.Stop());
         }
 
         public void StopBGMWithFade(float fadeTime = DEFAULT_FADETIME, Action callback = null)
         {
             if (fadeTime == 0f) fadeTime = DEFAULT_FADETIME;
-
-            if (currentFadeInCoroutine != null)
-            {
-                StopCoroutine(currentFadeInCoroutine);
-                currentFadeInCoroutine = null;
-            }
-
-            foreach (AudioSource source in bgmAudioSourceList)
-            {
-                if (source.isPlaying)
-                {
-                    StartCoroutine(source.FadeOut(fadeTime, callback));
-                }
-            }
+            bgmAudioSourceExList.ForEach(ase => ase.StopWithFadeOut(fadeTime, callback));
         }
-
-        public AudioClip GetSEAudioClipFromLoadedList(string clipName)
-        {
-            return TSMUtil.GetAudioClipFromLoadedList(clipName, seAudioClips);
-        }
-
+        
         public void StopAllSE()
         {
             seAudioSourceList.ForEach(ase => ase.Stop());
@@ -209,22 +191,22 @@ namespace TSM
 
         public int AddIntVolumeToMaster(int amount)
         {
-            int vol = GetIntVolumeFromMixerGroup("Master") + amount;
+            int vol = GetIntVolumeFromMixerGroup("MasterVolume") + amount;
             vol = Mathf.Min(10, Mathf.Max(0, vol));
 
-            SetIntVolumeToMixerGroup("Master", vol);
+            SetIntVolumeToMixerGroup("MasterVolume", vol);
             return vol;
         }
 
-        public int IntVolumeOfMaster
+        public int MasterVolumeInt
         {
             get
             {
-                return GetIntVolumeFromMixerGroup("Master");
+                return GetIntVolumeFromMixerGroup("MasterVolume");
             }
             set
             {
-                SetIntVolumeToMixerGroup("Master", value);
+                SetIntVolumeToMixerGroup("MasterVolume", value);
             }
         }
 
@@ -245,13 +227,11 @@ namespace TSM
 
         public void PlayJingle(string jingleName)
         {
-            if (jingleAudioSource.isPlaying)
+            if (!jingleAudioSource.isPlaying)
             {
-                jingleAudioSource.Stop();
+                jingleAudioSource.clip = TSMUtil.GetAudioClipFromLoadedList(jingleName, jingleAudioClips);
+                jingleAudioSource.Play();
             }
-
-            jingleAudioSource.clip = TSMUtil.GetAudioClipFromLoadedList(jingleName, jingleAudioClips);
-            jingleAudioSource.Play();
         }
 
         public void StopJingle()
