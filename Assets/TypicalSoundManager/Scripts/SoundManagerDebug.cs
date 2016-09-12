@@ -30,9 +30,9 @@ namespace TSM
                 }
             }
 
-            if (sm.JingleAudioSource.clip != null)
+            if (sm.JingleAudioSourceEx.audioSource.clip != null)
             {
-                GUI.Label(new Rect(0, 30, 600, 30), "Jingle " + sm.JingleAudioSource.clip.name + ":isPlaying " + sm.JingleAudioSource.isPlaying);
+                GUI.Label(new Rect(0, 30, 600, 30), "Jingle " + sm.JingleAudioSourceEx.audioSource.clip.name + ":isPlaying " + sm.JingleAudioSourceEx.audioSource.isPlaying);
             }
 
             if (!string.IsNullOrEmpty(sm.LastPlayedSEName))

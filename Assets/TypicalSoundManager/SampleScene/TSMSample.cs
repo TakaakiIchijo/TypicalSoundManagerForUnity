@@ -15,6 +15,7 @@ public class TSMSample : MonoBehaviour {
     public Button playSE1;
     public Button playSE2;
     public Button playJingle;
+    public Button stopJingle;
     public Button pause;
 
     public SoundManager sm;
@@ -72,6 +73,10 @@ public class TSMSample : MonoBehaviour {
 
         masterVolumeSlider.onValueChanged.AddListener((value) => {
             sm.MasterVolumeInt = (int)value;
+        });
+
+        stopJingle.onClick.AddListener(() => {
+            sm.StopJingle();
         });
     }
 

@@ -22,15 +22,15 @@ namespace TSM
         public string voiseAudioClipPath = "AudioClips/VOICE";
         public int seMaxNum = 5;//SEの同時再生上限数//
 
-        private AudioSource jingleAudioSource = new AudioSource();
+        private AudioSourceExtentions jingleAudioSourceEx;
         private List<AudioSource> seAudioSourceList = new List<AudioSource>();
         private List<AudioSourceExtentions> bgmAudioSourceExList = new List<AudioSourceExtentions>();
 
         public List<AudioSourceExtentions> BgmAudioSourceExList
         { get { return bgmAudioSourceExList; } }
 
-        public AudioSource JingleAudioSource
-        { get { return jingleAudioSource; } }
+        public AudioSourceExtentions JingleAudioSourceEx
+        { get { return jingleAudioSourceEx; } }
 
         public AudioMixer mixer;
         public AudioMixerGroup mixerSE;
@@ -86,7 +86,9 @@ namespace TSM
             }
 
             seAudioSourceList = TSMUtil.InstantiateAudioSourceList(seMaxNum, false, this.gameObject, mixerSE);
-            jingleAudioSource = TSMUtil.InstantiateAudioSource(false, this.gameObject, mixerJINGLE);
+
+            jingleAudioSourceEx = gameObject.AddComponent<AudioSourceExtentions>() as AudioSourceExtentions;
+            jingleAudioSourceEx.audioSource = TSMUtil.InstantiateAudioSource(false, this.gameObject, mixerJINGLE);
         }
 
         public void SetAudioListenerFollower(Transform cameraTransform)
@@ -131,7 +133,7 @@ namespace TSM
 
         public void OnBGMPause()
         {
-            jingleAudioSource.Pause();
+            jingleAudioSourceEx.Pause();
             bgmAudioSourceExList.ForEach(ase => ase.Pause());
         }
 
@@ -145,7 +147,7 @@ namespace TSM
 
         public void OnBGMResume()
         {
-            jingleAudioSource.UnPause();
+            jingleAudioSourceEx.UnPause();
             bgmAudioSourceExList.ForEach(ase => ase.UnPause());
         }
 
@@ -183,7 +185,7 @@ namespace TSM
             if (fadeTime == 0f) fadeTime = DEFAULT_FADETIME;
             bgmAudioSourceExList.ForEach(ase => ase.StopWithFadeOut(fadeTime, callback));
         }
-        
+
         public void StopAllSE()
         {
             seAudioSourceList.ForEach(ase => ase.Stop());
@@ -227,20 +229,22 @@ namespace TSM
 
         public void PlayJingle(string jingleName)
         {
-            if (!jingleAudioSource.isPlaying)
+            if (!jingleAudioSourceEx.audioSource.isPlaying)
             {
-                jingleAudioSource.clip = TSMUtil.GetAudioClipFromLoadedList(jingleName, jingleAudioClips);
-                jingleAudioSource.Play();
+                AudioClip clip = TSMUtil.GetAudioClipFromLoadedList(jingleName, jingleAudioClips);
+                jingleAudioSourceEx.Play(clip);
             }
         }
 
         public void StopJingle()
         {
-            if (jingleAudioSource.isPlaying)
-                return;
+            jingleAudioSourceEx.Stop();
+        }
 
-            jingleAudioSource.Stop();
-            jingleAudioSource.clip = null;
+        public void StopJingleWithFade(float fadeTime = DEFAULT_FADETIME, Action callback = null)
+        {
+            if (fadeTime == 0f) fadeTime = DEFAULT_FADETIME;
+            jingleAudioSourceEx.StopWithFadeOut(fadeTime, callback);
         }
     }
 }
