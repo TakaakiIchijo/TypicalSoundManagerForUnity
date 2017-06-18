@@ -10,15 +10,10 @@ namespace TSM
         private IEnumerator currentFadeCoroutine;
         private bool isPaused = false;
 
-        private float volumeBeforePause = 1f;
-
         public void Pause()
         {
-            //audioSource.Pause();
+            audioSource.Pause();
             isPaused = true;
-            volumeBeforePause = audioSource.volume;
-
-            StartCoroutine("PauseWithFade");
 
             if (currentFadeCoroutine != null)
             {
@@ -26,38 +21,16 @@ namespace TSM
             }
         }
 
-        public IEnumerator PauseWithFade()
-        {
-            while (audioSource.volume > 0f)
-            {
-                audioSource.volume -= Time.deltaTime / 0.1f;
-                yield return null;
-            }
-            audioSource.Pause();
-        }
-
         public void UnPause()
         {
-            //audioSource.UnPause();
+            audioSource.UnPause();
             isPaused = false;
-            StartCoroutine("UnPauseWithFade");
 
             if (currentFadeCoroutine != null)
             {
                 StartCoroutine(currentFadeCoroutine);
             }
         }
-
-        public IEnumerator UnPauseWithFade()
-        {
-            audioSource.UnPause();
-            while (audioSource.volume < volumeBeforePause)
-            {
-                audioSource.volume += Time.deltaTime / 0.1f;
-                yield return null;
-            }
-        }
-
 
         public void Play(AudioClip clip)
         {

@@ -12,8 +12,10 @@ namespace TSM
             sm = GetComponent<SoundManager>();
         }
 
+        /*
         private void OnGUI()
         {
+            
             GUI.Label(new Rect(0, 0, 600, 30), "SoundManager Monitor");
 
             for (int i = 0; i < sm.BgmAudioSourceExList.Count; i++)
@@ -30,15 +32,17 @@ namespace TSM
                 }
             }
 
-            if (sm.JingleAudioSourceEx.audioSource.clip != null)
+            if (sm.JingleAudioSource.clip != null)
             {
-                GUI.Label(new Rect(0, 30, 600, 30), "Jingle " + sm.JingleAudioSourceEx.audioSource.clip.name + ":isPlaying " + sm.JingleAudioSourceEx.audioSource.isPlaying);
+                GUI.Label(new Rect(0, 30, 600, 30), "Jingle " + sm.JingleAudioSource.clip.name + ":isPlaying " + sm.JingleAudioSource.isPlaying);
             }
 
             if (!string.IsNullOrEmpty(sm.LastPlayedSEName))
             {
                 GUI.Label(new Rect(0, 40, 600, 30), "SE " + sm.LastPlayedSEName + ":isPlayed");
             }
+            
         }
+        */
     }
 }
