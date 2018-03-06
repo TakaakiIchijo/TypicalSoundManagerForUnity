@@ -119,7 +119,7 @@ namespace TSM
         {
             for (int i = 0; i < clipArray.Length; i++)
             {
-                if (clipArray[i].Equals(clipName))
+                if (clipArray[i].name.Equals(clipName))
                 {
                     return clipArray[i];
                 }

@@ -43,7 +43,7 @@ namespace TSMSample
             pauseButton.SetEvent("Pause", GamePause, "Resume", GameResume);
         }
 
-        public void SetJinglePlayStatusText()
+        public void ShowUIVolumeConfig()
         {
             uiVolumeConfig.Show(
                 audoMixerManager.MasterVolumeByLinear,
