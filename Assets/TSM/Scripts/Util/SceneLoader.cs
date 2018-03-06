@@ -4,25 +4,26 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace TSMSample
+namespace TSMSampleUtil
 {
     public class SceneLoader : MonoBehaviour
     {
         public static SceneLoader Instance;
 
-        private Coroutine currentLoadCoroutine;
+        private IEnumerator currentLoadCoroutine;
 
         private void Awake()
         {
             Instance = this;
         }
 
-        public void LoadAdditive(string sceneName, Action callback = null)
+        public void LoadAdditiveWithCallback(string sceneName, Action callback = null)
         {
-            currentLoadCoroutine = StartCoroutine(LoadUIParts(sceneName, callback));
+            currentLoadCoroutine = LoadAdditiveWithCallbackCoroutine(sceneName, callback);
+            StartCoroutine(currentLoadCoroutine);
         }
 
-        private IEnumerator LoadUIParts(string sceneName, Action callback)
+        private IEnumerator LoadAdditiveWithCallbackCoroutine(string sceneName, Action callback)
         {
             AsyncOperation ao = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
 

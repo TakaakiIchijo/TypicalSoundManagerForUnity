@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-namespace TSMSample
+namespace TSMSampleUtil
 {
     public class Rotater : MonoBehaviour
     {

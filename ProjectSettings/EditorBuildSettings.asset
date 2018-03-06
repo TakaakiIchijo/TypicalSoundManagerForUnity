@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/TSM/Scripts/Sample/Scenes/TSMSample.unity
+    path: Assets/TSM/Samples/SoundTestSample/SoundTestSample.unity
     guid: 9a1e3101b93c45541901d14364873df6
   - enabled: 1
-    path: Assets/TSM/Scripts/Sample/Scenes/UI_VolumeConfig.unity
+    path: Assets/TSM/Scripts/Commom/UI_VolumeConfig.unity
     guid: 522a6f05c1c78574ca5ca73c68543fe3

@@ -1,16 +1,17 @@
 ﻿using UnityEngine;
 using TSM;
+using TSMSampleUtil;
 using System.Collections.Generic;
 
 namespace TSMSample
 {
-    public class TSMSampleMain : MonoBehaviour
+    public class SoundTestMain : MonoBehaviour
     {
         [SerializeField]
         public Transform mainCameraTransform;
 
         [SerializeField]
-        private MainUI mainUI;
+        private SoundTestUI mainUI;
 
         private UIVolumeConfig uiVolumeConfig;
 
@@ -28,7 +29,7 @@ namespace TSMSample
 
             audoMixerManager = SoundManager.Instance.GetAudioMixerManager();
 
-            SceneLoader.Instance.LoadAdditive("UI_VolumeConfig", Initialize);
+            SceneLoader.Instance.LoadAdditiveWithCallback("UI_VolumeConfig", Initialize);
         }
 
         public void Initialize()

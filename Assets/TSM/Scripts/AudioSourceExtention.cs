@@ -1,100 +1,94 @@
-﻿using UnityEngine;
-using UnityEngine.Events;
-using System.Linq;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Events;
 
 namespace TSM
 {
     public static class AudioSourceExtention
     {
-        public static void Play(this AudioSource audioSource, AudioClip clip, float volume = 1f)
+        public static void Play(this AudioSource audioSource, AudioClip audioClip, float volume = 1f)
         {
-            if (clip == null) return;
+            if (audioClip == null) return;
 
-            audioSource.clip = clip;
+            audioSource.clip = audioClip;
             audioSource.volume = volume;
             audioSource.Play();
         }
 
-        public static bool PlayOneShotFromArray(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f)
+        public static bool PlayOneShot(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f)
         {
             AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
-            if (audioClip == null)
-            {
-                Debug.LogWarning(clipName + "という名前のAudioClipは見つかりません");
-                return false;
-            }
-            else
-            {
-                audioSource.PlayOneShot(audioClip, volume);
-                return true;
-            }
+            audioSource.PlayOneShot(audioClip, volume);
+
+            return audioClip != null;
         }
 
-        public static bool PlayFromArray(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f)
+        public static bool Play(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f)
         {
             AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
-            if (audioClip == null)
-            {
-                Debug.LogWarning(clipName + "という名前のAudioClipは見つかりません");
-                return false;
-            }
-            else
-            {
-                audioSource.Play(audioClip, volume);
-                return true;
-            }
+            audioSource.Play(audioClip, volume);
+
+            return audioClip != null;
         }
 
         public static IEnumerator PlayWithCompCallback(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f, UnityAction compCallback = null)
         {
             AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
+
             if (audioClip == null)
             {
-                Debug.LogWarning(clipName + "という名前のAudioClipは見つかりません");
                 yield break;
             }
-            else
+
+            audioSource.Play(clipName, clipArray, volume);
+
+            float timer = 0f;
+
+            //WaitForSecondsを使うとCoroutineを一時停止・再開できなくなるのでwhileで対応//
+            while (timer < audioClip.length)
             {
-                yield return audioSource.PlayWithCompCallback(audioClip, volume, compCallback);
+                timer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (compCallback != null)
+            {
+                compCallback();
             }
         }
 
-        public static IEnumerator PlayWithCompCallback(this AudioSource audioSource, AudioClip clip, float volume = 1f, UnityAction compCallback = null)
+        public static IEnumerator PlayWithFadeIn(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float targetVolume = 1f, float fadeTime = 0.1f)
         {
-            audioSource.Play(clip, volume);
+            //目標ボリュームが0以下の場合は再生しない//
+            if (targetVolume <= 0f) yield break;
 
-            WaitForSeconds waitForSeconds = new WaitForSeconds(clip.length);
+            //配列からAudioClipを取得//
+            AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
 
-            yield return waitForSeconds;
+            //clipがなかったら処理を中止//
+            if (audioClip == null)
+            {
+                yield break;
+            }
 
-            if (compCallback != null) compCallback();
-        }
-
-        public static IEnumerator PlayWithFadeIn(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f, float fadeTime = 0.1f)
-        {
-            //ボリュームが0以下の場合は再生しない//
-            if (volume <= 0f) yield break;
-
-            //リストから再生//
-            bool isFound = audioSource.PlayFromArray(clipName, clipArray, 0f);
-
-            //ファイルが無かったら処理中止//
-            if (isFound == false) yield break;
+            audioSource.Play(audioClip, 0f);
 
             //フェードタイムが0かそれより小さればフェード処理を行わない//
             if (fadeTime <= 0f)
             {
-                audioSource.volume = volume;
+                audioSource.volume = targetVolume;
                 yield break;
             }
 
-            while (audioSource.volume < volume)
+            //目標ボリュームに到達するまで毎フレームボリュームを上げる//
+            while (audioSource.volume < targetVolume)
             {
                 float tempVolume = audioSource.volume + Time.deltaTime / fadeTime;
 
-                audioSource.volume = tempVolume > volume ? volume : tempVolume;//目標値よりでかい数値になったら丸める//
+                //目標ボリュームより計算結果が大きいか判定（いきなり大ボリュームにならないようにする）//
+                audioSource.volume = tempVolume > targetVolume ? targetVolume : tempVolume;
 
                 yield return null;
             }
@@ -121,26 +115,18 @@ namespace TSM
             audioSource.Stop();
         }
 
-        private static AudioClip GetClipByNameFromArray(string clipName, AudioClip[] array)
+        private static AudioClip GetClipByNameFromArray(string clipName, AudioClip[] clipArray)
         {
-            //どっかで38BのGCゴミが出てる//
-            for (int i = 0; i < array.Length; i++)
+            for (int i = 0; i < clipArray.Length; i++)
             {
-                if (array[i].IsSameName(clipName))
+                if (clipArray[i].Equals(clipName))
                 {
-                    return array[i];
+                    return clipArray[i];
                 }
             }
 
+            Debug.LogWarning(clipName + "という名前のAudioClipは見つかりません");
             return null;
-        }
-    }
-
-    public static class AudioClipExtention
-    {
-        public static bool IsSameName(this AudioClip audioClip, string clipName)
-        {
-            return EqualityComparer<string>.Default.Equals(audioClip.name, clipName);
         }
     }
 }

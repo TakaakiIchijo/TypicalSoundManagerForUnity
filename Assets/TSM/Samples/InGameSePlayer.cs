@@ -10,7 +10,7 @@ using TSM;
 namespace TSMSample
 {
     [RequireComponent(typeof(AudioSource))]
-    public class GameSeTest : MonoBehaviour, IAudioPausable
+    public class InGameSePlayer : MonoBehaviour, IAudioPausable
     {
         [SerializeField]
         private AudioSource audioSource;
@@ -24,13 +24,14 @@ namespace TSMSample
 
         public void PlaySe(string seName)
         {
-            audioSource.PlayOneShotFromArray(seName, audioClipArray);
+            audioSource.PlayOneShot(seName, audioClipArray);
         }
 
         private void Reset()
         {
             audioSource = GetComponent<AudioSource>();
             audioSource.loop = false;
+            audioSource.playOnAwake = false;
             audioSource.spatialBlend = 1f;//3Dオーディオ全振り//
         }
 

@@ -30,13 +30,11 @@ namespace TSM
         public static SoundManager Instance;
 
         private IEnumerator[] fadeCoroutineArray = new IEnumerator[2];
+        private IEnumerator jinglePlayCompCallbackCoroutine;
 
         public bool IsPaused { get; private set; }
 
         private List<IAudioPausable> pausableList = new List<IAudioPausable>();
-
-        private float currentJingleClipLength;
-        private UnityAction jingleCompCallback;
 
         public void SetPausableList(IAudioPausable audioPausable)
         {
@@ -66,38 +64,18 @@ namespace TSM
         public void PlayJingle(string clipName, UnityAction compCallback)
         {
             if (IsPaused) return;
-            audioSourceJingle.PlayFromArray(clipName, jingleClipArray);
 
-            currentJingleClipLength = audioSourceJingle.clip.length;
-            jingleCompCallback = compCallback;
-        }
+            compCallback += () => { jinglePlayCompCallbackCoroutine = null; };
 
-        private void Update()
-        {
-            if (IsPaused) return;
+            jinglePlayCompCallbackCoroutine = audioSourceJingle.PlayWithCompCallback(clipName: clipName, clipArray: jingleClipArray, compCallback: compCallback);
 
-            if (jingleCompCallback != null && currentJingleClipLength > 0f)
-            {
-                currentJingleClipLength -= Time.deltaTime;
-
-                if (currentJingleClipLength <= 0f)
-                {
-                    jingleCompCallback();
-                    jingleCompCallback = null;
-                }
-            }
+            StartCoroutine(jinglePlayCompCallbackCoroutine);
         }
 
         public void PlayMenuSe(string clipName)
         {
             if (IsPaused) return;
-            audioSourceMenuSe.PlayFromArray(clipName, menuSeAudioClipArray);
-        }
-
-        public void PlayMenuSeWithCallback(string clipName)
-        {
-            if (IsPaused) return;
-            audioSourceMenuSe.PlayWithCompCallback(clipName, menuSeAudioClipArray, 1f, () => { Debug.Log("end!"); });
+            audioSourceMenuSe.Play(clipName, menuSeAudioClipArray);
         }
 
         public void PlayBGM(string clipName)
@@ -193,6 +171,7 @@ namespace TSM
         {
             IsPaused = true;
             StopAllCoroutines();
+
             audioSourceBGMList.ForEach(asb => asb.Pause());
 
             audioSourceMenuSe.Pause();
@@ -204,6 +183,7 @@ namespace TSM
         public void Resume()
         {
             IsPaused = false;
+
             ResumeFadeCoroutine();
             audioSourceBGMList.ForEach(asb => asb.UnPause());
 
@@ -211,6 +191,11 @@ namespace TSM
             audioSourceJingle.UnPause();
 
             pausableList.ForEach(p => p.Resume());
+
+            if (jinglePlayCompCallbackCoroutine != null)
+            {
+                StartCoroutine(jinglePlayCompCallbackCoroutine);
+            }
         }
     }
 }

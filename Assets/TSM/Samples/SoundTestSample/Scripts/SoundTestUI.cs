@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace TSMSample
 {
-    public class MainUI : MonoBehaviour
+    public class SoundTestUI : MonoBehaviour
     {
         [SerializeField]
         private Text jinglePlayStatusText;
