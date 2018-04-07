@@ -25,11 +25,11 @@ namespace TSM
         private List<AudioSource> audioSourceBGMList = new List<AudioSource>(2);
 
         [SerializeField]
-        private AudioClip[] menuSeAudioClipArray, bgmAudioSourceArray, jingleClipArray;
+        private List<AudioClip> menuSeAudioClipList, bgmAudioClipList, jingleClipList;
 
         public static SoundManager Instance;
 
-        private IEnumerator[] fadeCoroutineArray = new IEnumerator[2];
+        private List<IEnumerator> fadeCoroutineList = new List<IEnumerator>();
         private IEnumerator jinglePlayCompCallbackCoroutine;
 
         public bool IsPaused { get; private set; }
@@ -39,6 +39,11 @@ namespace TSM
         public void SetPausableList(IAudioPausable audioPausable)
         {
             pausableList.Add(audioPausable);
+        }
+
+        public void RemovePausableList(IAudioPausable audioPausable)
+        {
+            pausableList.Remove(audioPausable);
         }
 
         private void Awake()
@@ -61,13 +66,22 @@ namespace TSM
             return audioMixermanager;
         }
 
-        public void PlayJingle(string clipName, UnityAction compCallback)
+        public void PlayJingle(string clipName, UnityAction compCallback = null)
         {
             if (IsPaused) return;
 
             compCallback += () => { jinglePlayCompCallbackCoroutine = null; };
 
-            jinglePlayCompCallbackCoroutine = audioSourceJingle.PlayWithCompCallback(clipName: clipName, clipArray: jingleClipArray, compCallback: compCallback);
+            AudioClip audioClip = jingleClipList.FirstOrDefault(clip => clip.name == clipName);
+
+            //clipがなかったら処理を中止//
+            if (audioClip == null)
+            {
+                Debug.Log("Can't find audioClip " + clipName);
+                return;
+            }
+
+            jinglePlayCompCallbackCoroutine = audioSourceJingle.PlayWithCompCallback(audioClip: audioClip, compCallback: compCallback);
 
             StartCoroutine(jinglePlayCompCallbackCoroutine);
         }
@@ -75,7 +89,16 @@ namespace TSM
         public void PlayMenuSe(string clipName)
         {
             if (IsPaused) return;
-            audioSourceMenuSe.Play(clipName, menuSeAudioClipArray);
+
+            AudioClip audioClip = menuSeAudioClipList.FirstOrDefault(clip => clip.name == clipName);
+
+            if (audioClip == null)
+            {
+                Debug.Log("Can't find audioClip " + clipName);
+                return;
+            }
+
+            audioSourceMenuSe.Play(audioClip);
         }
 
         public void PlayBGM(string clipName)
@@ -83,6 +106,7 @@ namespace TSM
             PlayBGMWithFade(clipName, 0.1f);
         }
 
+        //uGUIから呼ぶ用//
         public void PlayBGMWithFade(string clipName)
         {
             PlayBGMWithFade(clipName, 2f);
@@ -91,6 +115,16 @@ namespace TSM
         public void PlayBGMWithFade(string clipName, float fadeTime)
         {
             if (IsPaused) return;
+
+            //リストからAudioClipを取得//
+            AudioClip audioClip = bgmAudioClipList.FirstOrDefault(clip => clip.name == clipName);
+
+            //clipがなかったら処理を中止//
+            if (audioClip == null)
+            {
+                Debug.Log("Can't find audioClip " + clipName);
+                return;
+            }
 
             AudioSource audioSourceEmpty = audioSourceBGMList.FirstOrDefault(asb => asb.isPlaying == false);
 
@@ -107,12 +141,10 @@ namespace TSM
                 AudioSource audioSourcePlaying = audioSourceBGMList.FirstOrDefault(asb => asb.isPlaying == true);
                 if (audioSourcePlaying != null)
                 {
-                    fadeCoroutineArray[0] = audioSourcePlaying.StopWithFadeOut(fadeTime);
-                    StartCoroutine(fadeCoroutineArray[0]);
+                    AddFadeCoroutineListAndStart(audioSourcePlaying.StopWithFadeOut(fadeTime));
                 }
 
-                fadeCoroutineArray[1] = audioSourceEmpty.PlayWithFadeIn(clipName, bgmAudioSourceArray, fadeTime: fadeTime);
-                StartCoroutine(fadeCoroutineArray[1]);
+                AddFadeCoroutineListAndStart(audioSourceEmpty.PlayWithFadeIn(audioClip, fadeTime: fadeTime));
             }
         }
 
@@ -127,32 +159,23 @@ namespace TSM
 
             StopFadeCoroutine();
 
-            //２本のフェードコルーチンを両方使ってフェードアウト処理をする//
-            fadeCoroutineArray[0] = audioSourceBGMList[0].StopWithFadeOut(fadeTime);
-            StartCoroutine(fadeCoroutineArray[0]);
-
-            fadeCoroutineArray[1] = audioSourceBGMList[1].StopWithFadeOut(fadeTime);
-            StartCoroutine(fadeCoroutineArray[1]);
+            //再生しているbgm audio sourceがあったら止める//
+            foreach (AudioSource asb in audioSourceBGMList.Where(asb => asb.isPlaying == true))
+            {
+                AddFadeCoroutineListAndStart(asb.StopWithFadeOut(fadeTime));
+            }
         }
 
-        private void ResumeFadeCoroutine()
+        private void AddFadeCoroutineListAndStart(IEnumerator routine)
         {
-            if (fadeCoroutineArray[0] != null)
-            {
-                StartCoroutine(fadeCoroutineArray[0]);
-            }
-
-            if (fadeCoroutineArray[1] != null)
-            {
-                StartCoroutine(fadeCoroutineArray[1]);
-            }
+            fadeCoroutineList.Add(routine);
+            StartCoroutine(routine);
         }
 
         private void StopFadeCoroutine()
         {
-            StopAllCoroutines();
-            fadeCoroutineArray[0] = null;
-            fadeCoroutineArray[1] = null;
+            fadeCoroutineList.ForEach(routine => StopCoroutine(routine));
+            fadeCoroutineList.Clear();
         }
 
         public void SetAudioListener(Transform followTransform)
@@ -170,22 +193,41 @@ namespace TSM
         public void Pause()
         {
             IsPaused = true;
-            StopAllCoroutines();
 
+            fadeCoroutineList.ForEach(routine => StopCoroutine(routine));
             audioSourceBGMList.ForEach(asb => asb.Pause());
+
+            PauseExeptBGM();
+        }
+
+        public void PauseExeptBGM()
+        {
+            IsPaused = true;
 
             audioSourceMenuSe.Pause();
             audioSourceJingle.Pause();
 
             pausableList.ForEach(p => p.Pause());
+
+            if (jinglePlayCompCallbackCoroutine != null)
+            {
+                StopCoroutine(jinglePlayCompCallbackCoroutine);
+            }
         }
 
         public void Resume()
         {
             IsPaused = false;
 
-            ResumeFadeCoroutine();
+            fadeCoroutineList.ForEach(routine => StartCoroutine(routine));
             audioSourceBGMList.ForEach(asb => asb.UnPause());
+
+            ResumeExeptBGM();
+        }
+
+        public void ResumeExeptBGM()
+        {
+            IsPaused = false;
 
             audioSourceMenuSe.UnPause();
             audioSourceJingle.UnPause();

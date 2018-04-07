@@ -5,8 +5,7 @@ namespace TSM
 {
     public static class AudioMixerGroupExtention
     {
-        //AudioMixerGroupのInspectorビューでAttenuationのVolumeを右クリックしExport Volume to scriptからExposed Parametersで//
-        //"Group名+Volume"の命名規則で設定する//
+        //パラメーター名は"Group名+Volume"の命名規則で設定する//
 
         public static float GetVolumeByLinear(this AudioMixerGroup audioMixerGroup)
         {

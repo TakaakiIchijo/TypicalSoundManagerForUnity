@@ -424,15 +424,12 @@ MonoBehaviour:
   audioSourceBGMList:
   - {fileID: 82682412150939026}
   - {fileID: 82398847482741580}
-  menuSeAudioClipArray:
-  - {fileID: 8300000, guid: 201ae03c028c35a428abd45db382ca40, type: 3}
-  - {fileID: 8300000, guid: 1c61f1d9c56054348bd1026c7868bdce, type: 3}
-  - {fileID: 8300000, guid: f8dd2fd40b6556e448b4738aa1067eb0, type: 3}
+  menuSeAudioClipList:
   - {fileID: 8300000, guid: 257b50d6f60e31244932f562cd8fd213, type: 3}
-  bgmAudioSourceArray:
+  bgmAudioClipList:
   - {fileID: 8300000, guid: ad4d63abb50daed458eff95a2eb1736a, type: 3}
   - {fileID: 8300000, guid: 7639810db4464ca4f948d885b8474b32, type: 3}
-  jingleClipArray:
+  jingleClipList:
   - {fileID: 8300000, guid: 3fde096b6a5e1c94491b188ca77ab794, type: 3}
 --- !u!114 &114575246403319008
 MonoBehaviour:

@@ -49,5 +49,10 @@ namespace TSM
                 gameSe.SetVolumeByLinear(value);
             }
         }
+
+        public AudioMixerGroup GetGameSeAudioMixerGroup()
+        {
+            return gameSe;
+        }
     }
 }

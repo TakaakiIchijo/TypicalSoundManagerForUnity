@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using TSM;
-using TSMSampleUtil;
 using System.Collections.Generic;
 
 namespace TSMSample
@@ -13,7 +12,8 @@ namespace TSMSample
         [SerializeField]
         private SoundTestUI mainUI;
 
-        private UIVolumeConfig uiVolumeConfig;
+        [SerializeField]
+        private VolumeConfigUI volumeConfigUI;
 
         private AudioMixerManager audoMixerManager;
 
@@ -29,23 +29,16 @@ namespace TSMSample
 
             audoMixerManager = SoundManager.Instance.GetAudioMixerManager();
 
-            SceneLoader.Instance.LoadAdditiveWithCallback("UI_VolumeConfig", Initialize);
-        }
-
-        public void Initialize()
-        {
-            uiVolumeConfig = FindObjectOfType<UIVolumeConfig>();
-
-            uiVolumeConfig.SetMasterSliderEvent(vol => audoMixerManager.MasterVolumeByLinear = vol);
-            uiVolumeConfig.SetBgmSliderEvent(vol => audoMixerManager.BgmVolumeByLinear = vol);
-            uiVolumeConfig.SetGameSeSliderEvent(vol => audoMixerManager.GameSeVolumeByLinear = vol);
+            volumeConfigUI.SetMasterSliderEvent(vol => audoMixerManager.MasterVolumeByLinear = vol);
+            volumeConfigUI.SetBgmSliderEvent(vol => audoMixerManager.BgmVolumeByLinear = vol);
+            volumeConfigUI.SetGameSeSliderEvent(vol => audoMixerManager.GameSeVolumeByLinear = vol);
 
             pauseButton.SetEvent("Pause", GamePause, "Resume", GameResume);
         }
 
-        public void ShowUIVolumeConfig()
+        public void ShowVolumeConfigUI()
         {
-            uiVolumeConfig.Show(
+            volumeConfigUI.Show(
                 audoMixerManager.MasterVolumeByLinear,
                 audoMixerManager.BgmVolumeByLinear,
                 audoMixerManager.GameSeVolumeByLinear);

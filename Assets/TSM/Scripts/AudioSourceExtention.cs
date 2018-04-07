@@ -8,41 +8,27 @@ namespace TSM
 {
     public static class AudioSourceExtention
     {
-        public static void Play(this AudioSource audioSource, AudioClip audioClip, float volume = 1f)
+        //Play関数の拡張
+        //１行でaudioClip, ボリューム、再生位置のランダマイズまで指定できるようにする//
+        public static void Play(this AudioSource audioSource, AudioClip audioClip, float volume = 1f, bool isRandomStartTime = false)
         {
             if (audioClip == null) return;
 
             audioSource.clip = audioClip;
             audioSource.volume = volume;
+
+            if (isRandomStartTime)
+            {
+                audioSource.time = UnityEngine.Random.Range(0f, audioClip.length - 0.01f);
+                //結果がlengthと同値になるとシークエラーを起こすため -0.01秒する//
+            }
+
             audioSource.Play();
         }
 
-        public static bool PlayOneShot(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f)
+        public static IEnumerator PlayWithCompCallback(this AudioSource audioSource, AudioClip audioClip, float volume = 1f, UnityAction compCallback = null)
         {
-            AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
-            audioSource.PlayOneShot(audioClip, volume);
-
-            return audioClip != null;
-        }
-
-        public static bool Play(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f)
-        {
-            AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
             audioSource.Play(audioClip, volume);
-
-            return audioClip != null;
-        }
-
-        public static IEnumerator PlayWithCompCallback(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float volume = 1f, UnityAction compCallback = null)
-        {
-            AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
-
-            if (audioClip == null)
-            {
-                yield break;
-            }
-
-            audioSource.Play(clipName, clipArray, volume);
 
             float timer = 0f;
 
@@ -53,29 +39,30 @@ namespace TSM
                 yield return null;
             }
 
+            //再生完了コールバックを実行//
             if (compCallback != null)
             {
                 compCallback();
             }
         }
 
-        public static IEnumerator PlayWithFadeIn(this AudioSource audioSource, string clipName, AudioClip[] clipArray, float targetVolume = 1f, float fadeTime = 0.1f)
+        /// <summary>
+        /// /
+        /// </summary>
+        /// <param name="audioClip"></param>
+        /// <param name="targetVolume">フェードしたときの最終到達ボリューム</param>
+        /// <param name="fadeTime">フェード時間</param>
+        /// <param name="isRandomStartTime">再生開始位置をランダマイズ</param>
+        /// <returns></returns>
+        public static IEnumerator PlayWithFadeIn(this AudioSource audioSource, AudioClip audioClip, float targetVolume = 1f, float fadeTime = 0.1f, bool isRandomStartTime = false)
         {
-            //目標ボリュームが0以下の場合は再生しない//
+            //目標ボリュームが0以下の場合は再生キャンセル//
             if (targetVolume <= 0f) yield break;
 
-            //配列からAudioClipを取得//
-            AudioClip audioClip = GetClipByNameFromArray(clipName, clipArray);
+            //再生開始//
+            audioSource.Play(audioClip, 0f, isRandomStartTime);
 
-            //clipがなかったら処理を中止//
-            if (audioClip == null)
-            {
-                yield break;
-            }
-
-            audioSource.Play(audioClip, 0f);
-
-            //フェードタイムが0かそれより小さればフェード処理を行わない//
+            //フェードタイムが0かそれより小さればフェード処理をキャンセルして//
             if (fadeTime <= 0f)
             {
                 audioSource.volume = targetVolume;
@@ -85,9 +72,9 @@ namespace TSM
             //目標ボリュームに到達するまで毎フレームボリュームを上げる//
             while (audioSource.volume < targetVolume)
             {
-                float tempVolume = audioSource.volume + Time.deltaTime / fadeTime;
+                float tempVolume = audioSource.volume + (Time.deltaTime / fadeTime * targetVolume);
 
-                //目標ボリュームより計算結果が大きいか判定（いきなり大ボリュームにならないようにする）//
+                //目標ボリュームより計算結果が大きいか判定（急に大ボリュームにならないようにする）//
                 audioSource.volume = tempVolume > targetVolume ? targetVolume : tempVolume;
 
                 yield return null;
@@ -115,18 +102,5 @@ namespace TSM
             audioSource.Stop();
         }
 
-        private static AudioClip GetClipByNameFromArray(string clipName, AudioClip[] clipArray)
-        {
-            for (int i = 0; i < clipArray.Length; i++)
-            {
-                if (clipArray[i].name.Equals(clipName))
-                {
-                    return clipArray[i];
-                }
-            }
-
-            Debug.LogWarning(clipName + "という名前のAudioClipは見つかりません");
-            return null;
-        }
     }
 }
